@@ -173,28 +173,17 @@ namespace GarenOP
             try
             {
                 //Check if the player is dead.
-                if (ObjectManager.Player.IsDead)
+                if (ObjectManager.Player.Deaths ==3)
                 {
-                    //This is to prevent instant reduction to 0.  This only happens the first time.
-                    if (!dead)
+                    try
                     {
-                        //Make them set to dead to prevent instant reduction and reduce life counter.
-                        dead = true;
-                        lifeCounter--;
-                        //If you run out of lives, kill the process for League.  GG no RE.
-                        if (lifeCounter == 0)
-                        {
-                            try
-                            {
-                                Game.Say("/all I'M SUCH A FUCKING FAILURE. I QUIT.");
-                                Process[] proc = Process.GetProcessesByName("League of Legends.exe");
-	                            proc[0].Kill();
-                            }
-                            catch(Exception e)
-                            {
-                                
-                            }
-                        }
+                        Game.Say("/all I'M SUCH A FUCKING FAILURE. I QUIT.");
+                        Process[] proc = Process.GetProcessesByName("League of Legends.exe");
+                        proc[0].Kill();
+                    }
+                    catch
+                    {
+                        
                     }
                 }
                 else
