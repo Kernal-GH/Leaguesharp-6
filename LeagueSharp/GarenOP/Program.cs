@@ -178,7 +178,7 @@ namespace GarenOP
                     try
                     {
                         Game.Say("/all I'M SUCH A FUCKING FAILURE. I QUIT.");
-                        Process[] proc = Process.GetProcessesByName("League of Legends.exe");
+                        Process[] proc = Process.GetProcessesByName("League of Legends");
                         proc[0].Kill();
                     }
                     catch
