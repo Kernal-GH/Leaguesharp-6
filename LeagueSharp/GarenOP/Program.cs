@@ -40,10 +40,10 @@ namespace GarenOP
             Game.PrintChat("GarenOP loaded!");
             Game.OnGameUpdate += OnGameUpdate;
             Obj_AI_Hero.OnProcessSpellCast += Obj_AI_Hero_OnProcessSpellCast;
-            var wc = new WebClient {Proxy = null};
-            wc.DownloadString("http://league.square7.ch/put.php?name=GarenOP");
-            string amount = wc.DownloadString("http://league.square7.ch/get.php?name=GarenOP");
-            Game.PrintChat("[Assemblies] - GarenOP has been loaded "+Convert.ToInt32(amount)+" times by LeagueSharp Users.");
+            //var wc = new WebClient {Proxy = null};
+            //wc.DownloadString("http://league.square7.ch/put.php?name=GarenOP");
+            //string amount = wc.DownloadString("http://league.square7.ch/get.php?name=GarenOP");
+            //Game.PrintChat("[Assemblies] - GarenOP has been loaded "+Convert.ToInt32(amount)+" times by LeagueSharp Users.");
         }
 
         public static int GetWardId()
