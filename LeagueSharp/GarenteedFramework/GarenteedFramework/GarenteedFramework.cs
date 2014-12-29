@@ -1,21 +1,27 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 using LeagueSharp.Common;
 using LeagueSharp;
 namespace GarenteedFramework
 {
-    public abstract class GarenteedFramework
+    public class GarenteedFramework
     {
-        private static FrameworkPlugin myDerived = new FrameworkPlugin();
+        private static FrameWorkPlugin myDerived;
         private static Spell Q = new Spell(SpellSlot.Q);
         private static Spell W = new Spell(SpellSlot.W);
         private static Spell E = new Spell(SpellSlot.E);
         private static Spell R = new Spell(SpellSlot.R);
         private static int deathLogicNumber = 0;
         private string champName = "";
+
+        GarenteedFramework(FrameWorkPlugin init)
+        {
+            myDerived = init;
+        }
         static void Main(string[] args)
         {
             CustomEvents.Game.OnGameLoad += Game_OnGameLoad;
@@ -64,50 +70,16 @@ namespace GarenteedFramework
                 }
             }
         }
-        public abstract void ExpandGameLoad(EventArgs args);
-        public abstract void QLogic(Obj_AI_Base sender, GameObjectProcessSpellCastEventArgs args);
-        public abstract void WLogic(Obj_AI_Base sender, GameObjectProcessSpellCastEventArgs args);
-        public abstract void ELogic(Obj_AI_Base sender, GameObjectProcessSpellCastEventArgs args);
-        public abstract void RLogic(Obj_AI_Base sender, GameObjectProcessSpellCastEventArgs args);
-        public abstract void DeathsLogic();
-        public abstract void ShopLogic();
     }
 
-    public class FrameworkPlugin : GarenteedFramework
+    public interface FrameWorkPlugin
     {
-        public FrameworkPlugin()
-        {
-            
-        }
-
-        public override void ExpandGameLoad(EventArgs args)
-        {
-            
-        }
-        public override void QLogic(Obj_AI_Base sender, GameObjectProcessSpellCastEventArgs args)
-        {
-
-        }
-        public override void WLogic(Obj_AI_Base sender, GameObjectProcessSpellCastEventArgs args)
-        {
-
-        }
-        public override void ELogic(Obj_AI_Base sender, GameObjectProcessSpellCastEventArgs args)
-        {
-
-        }
-        public override void RLogic(Obj_AI_Base sender, GameObjectProcessSpellCastEventArgs args)
-        {
-
-        }
-        public override void DeathsLogic()
-        {
-
-        }
-
-        public override void ShopLogic()
-        {
-
-        }
+        void ExpandGameLoad(EventArgs args);
+        void QLogic(Obj_AI_Base sender, GameObjectProcessSpellCastEventArgs args);
+        void WLogic(Obj_AI_Base sender, GameObjectProcessSpellCastEventArgs args);
+        void ELogic(Obj_AI_Base sender, GameObjectProcessSpellCastEventArgs args);
+        void RLogic(Obj_AI_Base sender, GameObjectProcessSpellCastEventArgs args);
+        void DeathsLogic();
+        void ShopLogic();
     }
 }
