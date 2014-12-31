@@ -20,7 +20,7 @@ namespace GarenteedFramework
         private string champName = "";
 
         //Pass in the interface object and set the class variables.
-        GarenteedFramework(FrameWorkPlugin init)
+        public GarenteedFramework(FrameWorkPlugin init)
         {
             myDerived = init;
         }
