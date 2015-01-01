@@ -67,7 +67,7 @@ namespace GarenOP
             {
                 foreach (var slot in ObjectManager.Player.InventoryItems.Where(slot => slot.Id == (ItemId)wardItem))
                 {
-                    slot.UseItem(pos.To3D());
+                    Items.UseItem(wardItem, pos.To3D());
                     return true;
                 }
             }
@@ -162,7 +162,7 @@ namespace GarenOP
                     {
                         ObjectManager.Player.Spellbook.CastSpell(SpellSlot.Trinket, ObjectManager.Player.ServerPosition);
                         Dancing = true;
-                        ObjectManager.Player.SummonerSpellbook.CastSpell(ObjectManager.Player.GetSpellSlot("SummonerFlash"),ObjectManager.Player.ServerPosition);
+                        ObjectManager.Player.SpellBlock.CastSpell(ObjectManager.Player.GetSpellSlot("SummonerFlash"),ObjectManager.Player.ServerPosition);
 
                     }
 
