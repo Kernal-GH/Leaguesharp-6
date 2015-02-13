@@ -46,7 +46,7 @@ namespace GarenteedFramework
             if(ObjectManager.Player.Deaths>=deathLogicNumber)
                 myDerived.DeathsLogic();
             //Shopping logic.
-            if (Utility.InShopRange() || ObjectManager.Player.IsDead)
+            if (Utility.InShop((Obj_AI_Hero)ObjectManager.Player) || ObjectManager.Player.IsDead)
                 myDerived.ShopLogic();
         }
         //Set the champ name for any comparisons needed for later framework expansion.
