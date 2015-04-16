@@ -9,7 +9,7 @@ using LeagueSharp;
 using LeagueSharp.Common;
 using System.Net;
 
-namespace GarenOP
+namespace GarenteedFreelo
 {
 
     class Program
@@ -199,11 +199,10 @@ namespace GarenOP
                 //If near the shop or dead and you either A) don't have a Sweeper or B) don't have sight wards, buy them.  I assume everyone has enough money for it
                 if ((Utility.InShop((Obj_AI_Hero)ObjectManager.Player) || ObjectManager.Player.IsDead) && (!Items.HasItem(3341, (Obj_AI_Hero)ObjectManager.Player) || !Items.HasItem(2044, (Obj_AI_Hero)ObjectManager.Player)))
                 {
-                    Packet.C2S.SellItem.Encoded(new Packet.C2S.SellItem.Struct(SpellSlot.Trinket, ObjectManager.Player.NetworkId)).Send();
-                    Packet.C2S.BuyItem.Encoded(new Packet.C2S.BuyItem.Struct(3341, ObjectManager.Player.NetworkId)).Send();
-                    Packet.C2S.BuyItem.Encoded(new Packet.C2S.BuyItem.Struct(2044, ObjectManager.Player.NetworkId)).Send();
-                    Packet.C2S.BuyItem.Encoded(new Packet.C2S.BuyItem.Struct(2044, ObjectManager.Player.NetworkId)).Send();
-                    Packet.C2S.BuyItem.Encoded(new Packet.C2S.BuyItem.Struct(2044, ObjectManager.Player.NetworkId)).Send();
+                    ObjectManager.Player.BuyItem(ItemId.Sweeping_Lens_Trinket);
+                    ObjectManager.Player.BuyItem(ItemId.Stealth_Ward);
+                    ObjectManager.Player.BuyItem(ItemId.Stealth_Ward);
+                    ObjectManager.Player.BuyItem(ItemId.Stealth_Ward);
                     wardCount = 3;
                 }
                 //Every 3 seconds, clear the dancing status.
@@ -211,12 +210,6 @@ namespace GarenOP
                 {
                     Dancing = false;
                 };
-                //If you're dancing, spam laugh and dance packets
-                if (Dancing)
-                {
-                    Packet.C2S.Emote.Encoded(new Packet.C2S.Emote.Struct(4)).Send();
-                    Packet.C2S.Emote.Encoded(new Packet.C2S.Emote.Struct(2)).Send();
-                }
             }
             catch (Exception e)
             {

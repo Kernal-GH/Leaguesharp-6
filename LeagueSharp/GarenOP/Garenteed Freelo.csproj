@@ -7,7 +7,7 @@
     <ProjectGuid>{DA61ACB7-7132-43AE-B871-B47CFB0C6A9F}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>GarenOP</RootNamespace>
+    <RootNamespace>GarenteedFreelo</RootNamespace>
     <AssemblyName>GarenOP</AssemblyName>
     <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
