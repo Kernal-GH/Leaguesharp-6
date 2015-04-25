@@ -15,6 +15,7 @@ namespace NoMoreFreezes
         static void Main(string[] args)
         {
             Game.OnStart += GameStarted;
+            CustomEvents.Game.OnGameLoad += GameStarted;
             Drawing.OnDraw += DrawNotFrozen;
         }
 
