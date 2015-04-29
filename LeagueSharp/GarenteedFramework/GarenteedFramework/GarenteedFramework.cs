@@ -34,7 +34,7 @@ namespace GarenteedFramework
         {
             //Let them know it loaded using Garenteed Framework
             Game.PrintChat("Made using Garenteed Framework by Nouser");
-            Game.OnGameUpdate += OnGameUpdate;
+            Game.OnUpdate += OnGameUpdate;
             Obj_AI_Hero.OnProcessSpellCast += Obj_AI_Hero_OnProcessSpellCast;
             //Custom code for on game load (ie Game.PrintChat("Herp Derp Script by Degrec using cracked scripts");)
             myDerived.ExpandGameLoad(args);
