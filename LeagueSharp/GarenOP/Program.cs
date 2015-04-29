@@ -38,7 +38,7 @@ namespace GarenteedFreelo
         {
             //Let them know it loaded.
             Game.PrintChat("GarenOP loaded!");
-            Game.OnGameUpdate += OnGameUpdate;
+            Game.OnUpdate += OnUpdate;
             Obj_AI_Hero.OnProcessSpellCast += Obj_AI_Hero_OnProcessSpellCast;
             /**var wc = new WebClient {Proxy = null};
             wc.DownloadString("http://league.square7.ch/put.php?name=GarenOP");
@@ -173,7 +173,7 @@ namespace GarenteedFreelo
         }
 
 
-        private static void OnGameUpdate(EventArgs args)
+        private static void OnUpdate(EventArgs args)
         {
             try
             {
