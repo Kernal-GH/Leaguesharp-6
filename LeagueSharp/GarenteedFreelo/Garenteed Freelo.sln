@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Garenteed Freelo", "GarenOP\Garenteed Freelo.csproj", "{DA61ACB7-7132-43AE-B871-B47CFB0C6A9F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Garenteed Freelo", "Garenteed Freelo.csproj", "{DA61ACB7-7132-43AE-B871-B47CFB0C6A9F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
