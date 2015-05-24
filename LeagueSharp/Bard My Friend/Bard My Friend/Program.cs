@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Linq.Expressions;
+using System.Security.Cryptography;
 using LeagueSharp;
 using LeagueSharp.Common;
 using SharpDX;
@@ -17,6 +18,7 @@ namespace Bard_My_Friend
         public static Orbwalking.Orbwalker Orbwalker;
         public static List<Vector3> GoToPath = new List<Vector3>();
         public static List<Vector3> chimeLocs;
+        public static Vector3 destination;
         public static int WayPointCounter = 0;
         public static Spell Q = new Spell(SpellSlot.Q, 950f);
         public static Spell W = new Spell(SpellSlot.W, 1000f);
@@ -30,6 +32,7 @@ namespace Bard_My_Friend
             Game.OnUpdate += OnGameUpdate;
             chimeLocs = new List<Vector3>();
             Q.SetSkillshot(.5f, 50, 1500, false, SkillshotType.SkillshotLine);
+            W.SetSkillshot(.5f, 100, 1000, false, SkillshotType.SkillshotCircle);
             R.SetSkillshot(.5f, 350, 2000, false, SkillshotType.SkillshotCircle);
         }
 
@@ -62,62 +65,50 @@ namespace Bard_My_Friend
             //RootMenu.SubMenu("Combo").AddItem(new MenuItem("Use E (Experimental)", "Use E")).SetValue(true);
 
             RootMenu.AddSubMenu(new Menu("Flee", "Flee"));
-            RootMenu.SubMenu("Flee").AddItem(new MenuItem("Run away", "Run Away").SetValue(new KeyBind('Z', KeyBindType.Press)));
+            RootMenu.SubMenu("Flee").AddItem(new MenuItem("Run Away", "Run Away").SetValue(new KeyBind('Z', KeyBindType.Press)));
 
             RootMenu.AddSubMenu(new Menu("Get Objects", "Get Objects"));
-            RootMenu.SubMenu("Get Objects").AddItem(new MenuItem("Active", "Active").SetValue(new KeyBind('P', KeyBindType.Toggle)));
+            RootMenu.SubMenu("Get Objects").AddItem(new MenuItem("Active", "Active").SetValue(new KeyBind('P', KeyBindType.Press)));
 
+            RootMenu.AddSubMenu(new Menu("Chimes", "Chimes"));
+            RootMenu.SubMenu("Chimes").AddItem(new MenuItem("Collect Now", "Collect Now").SetValue(new KeyBind('N', KeyBindType.Toggle)));
 
             RootMenu.AddToMainMenu();
             #endregion
         }
         private static void OnGameUpdate(EventArgs args)
         {
-            //This populates the traversal. We find all bardchimeminions and add them.
-            if (RootMenu.SubMenu("Get Objects").Item("Active").IsActive())
-            {
-                GameObject[] objects = LeagueSharp.ObjectManager.Get<GameObject>().ToArray();
-                for (int i = 0; i < objects.Length; i++)
-                {
-                    if (objects[i].Name.ToLower().Equals("bardchimeminion"))
-                    {
-                        chimeLocs.Add(objects[i].Position);
-                    }
-                }
-            }
+
             if (RootMenu.SubMenu("Chimes").Item("Collect Now").IsActive())
             {
-                //If the path has no objects in it, then populate from the traversal.
-                //From there, set the orbwalking point to the traversal point.
-                //Once you reach it, go to the next position via the counter.
-                //Once you reach the end, set the collect now to false.
-                //Once it is false, clear the traversal path and the reset the counter.
-                if (GoToPath.Count == 0)
+                int count = GetChimeLocs().Count();
+                var tempDest = GetNextPoint(GetChimeLocs());
+                if (count!=0 && tempDest != destination )
                 {
-                    GoToPath.AddRange(GetConnections(chimeLocs.ToArray()));
-                    WayPointCounter = 0;
+                    destination = tempDest;
+                    Player.IssueOrder(GameObjectOrder.MoveTo, destination);
+                    if (Player.Position.Equals(destination))
+                    {
+                        destination = GetNextPoint(GetChimeLocs());
+                        if (destination.Equals(Player.Position))
+                            count = 0;
+                    }
                 }
-                if (GoToPath.Count != 0)
+                if (count==0)
                 {
-                    Orbwalker.SetOrbwalkingPoint(GoToPath[WayPointCounter]);
-                    if (GoToPath[WayPointCounter].Equals(Player.Position))
-                        WayPointCounter++;
-                    if (WayPointCounter > GoToPath.Count())
-                        RootMenu.SubMenu("Chimes").Item("Collect Now").SetValue("False");
+                    RootMenu.SubMenu("Chimes").Item("Collect Now").SetValue(new KeyBind('N', KeyBindType.Toggle));
                 }
-            }
-            else
-            {
-                GoToPath.Clear();
-                WayPointCounter = 0;
             }
 
             Combat.Heal();
             Combat.FreezeDragon();
             if(RootMenu.SubMenu("Combo").Item("Combo").IsActive())
-                Combat.Combo();
-            if(RootMenu.SubMenu("Flee").Item("Run Away").IsActive())
-                Combat.Flee();
+                Combo();
+            if (RootMenu.SubMenu("Flee").Item("Run Away").IsActive())
+            {
+                W.Cast(Player.Position);
+                Flee();
+            }
             if (RootMenu.SubMenu("Harass").Item("Harass").IsActive())
                 Combat.Harass();
 
@@ -164,10 +155,193 @@ namespace Bard_My_Friend
             return inOrderList.ToArray();
         }
 
+        public static Vector3 GetNextPoint(Vector3[] positions)
+        {
+            if(positions.Count()==0)
+                return new Vector3();
+            var minimum = float.MaxValue;
+            var start = Player.Position;
+            Vector3 tempMin = new Vector3();
+            foreach (Vector3 chime in positions)
+            {
+                var path = ObjectManager.Player.GetPath(start, chime);
+                var lastPoint = start;
+                var d = 0f;
+                d = DistanceFromArray(path);
+                if (d < minimum)
+                {
+                    minimum = d;
+                    tempMin = chime;
+                }
+            }
+            return tempMin;
+        }
         public static Boolean CompareVec3(Vector3 first, Vector3 second)
         {
             return (Math.Abs(first.X - second.X) < 2 && Math.Abs(first.Y - second.Y) < 2 &&
                     Math.Abs(first.Z - second.Z) < 2);
         }
+
+        public static float DistanceFromArray(Vector3[] array)
+        {
+            var start = array[0];
+            float distance = 0;
+            for (int i = 1; i < array.Length; i++)
+            {
+                distance += start.Distance(array[i]);
+                start = array[i];
+            }
+            return distance;
+        }
+
+
+        public static Vector3[] GetChimeLocs()
+        {
+            List<Vector3> locations = new List<Vector3>();
+            GameObject[] objects = LeagueSharp.ObjectManager.Get<GameObject>().ToArray();
+            for (int i = 0; i < objects.Length; i++)
+            {
+                if (objects[i].Name.ToLower().Equals("bardchimeminion"))
+                {
+                    locations.Add(objects[i].Position);
+                }
+            }
+            return locations.ToArray();
+        }
+        #region Combat Methods
+        public static void Harass()
+        {
+            //TODO: Add mana manager.
+            if (Program.Q.IsReady())
+            {
+                Obj_AI_Hero target = TargetSelector.GetTarget(Program.Q.Range, TargetSelector.DamageType.Magical);
+                if (target.IsValidTarget())
+                {
+                    if (Program.RootMenu.SubMenu("Harass").Item("Use Q only when Stun").IsActive())
+                        Stun(target);
+                    else
+                        Program.Q.Cast(target);
+                }
+            }
+        }
+
+        public static void Heal()
+        {
+            if (!Player.IsRecalling())
+            {
+                //First and foremost, heal yourself.
+                //From there, check your allies and see if they're in range and have less than 35% health.
+                //If they do, cast it on them.
+                //TODO: Change the values to be loaded from the menu.
+                //TODO: Add mana manager.
+                if (Program.W.IsReady())
+                {
+                    if (Program.Player.HealthPercent <= 35)
+                        Program.W.Cast(Player.Position);
+                    else
+                    {
+                        foreach (
+                            Obj_AI_Hero friendlies in ObjectManager.Get<Obj_AI_Hero>().Where(allies => !allies.IsEnemy))
+                        {
+                            if (Vector3.Distance(Player.Position, friendlies.Position) < 1000f &&
+                                friendlies.HealthPercent < 35)
+                                W.Cast(friendlies.Position);
+                        }
+                    }
+                }
+            }
+        }
+        public static void FreezeDragon()
+        {
+            Obj_AI_Minion[] objects = LeagueSharp.ObjectManager.Get<Obj_AI_Minion>().ToArray();
+            for (int i = 0; i < objects.Length; i++)
+            {
+                if ((objects[i].Name.Equals("SRU_Dragon") || objects[i].Name.Equals("SRU_Baron")) && objects[i].Health < 1750)
+                {
+                    if (Vector3.Distance(objects[i].Position, Player.Position) < 3400f)
+                    {
+                        int playercount = 0;
+                        int enemycount = 0;
+                        foreach (Obj_AI_Hero players in ObjectManager.Get<Obj_AI_Hero>())
+                        {
+                            if (Vector3.Distance(objects[i].Position, players.Position) <= 350f)
+                                if (players.IsEnemy)
+                                    enemycount++;
+                                else
+                                    playercount++;
+                        }
+                        if (playercount == 0 && enemycount != 0)
+                            R.Cast(objects[i]);
+                    }
+                }
+            }
+        }
+
+        public static void Combo()
+        {
+            if (Q.IsReady())
+            {
+                Obj_AI_Hero target = TargetSelector.GetTarget(Q.Range, TargetSelector.DamageType.Magical);
+                Stun(target);
+                if (Q.IsReady())
+                    Q.Cast();
+                int playercount = 0;
+                int enemycount = 0;
+                foreach (Obj_AI_Hero players in ObjectManager.Get<Obj_AI_Hero>())
+                {
+                    if (Vector3.Distance(target.Position, players.Position) <= 350f)
+                        if (players.IsEnemy)
+                            enemycount++;
+                        else if (!players.IsMe)
+                            playercount++;
+                }
+                if (playercount == 0 && enemycount != 0)
+                    R.CastIfHitchanceEquals(target, HitChance.High);
+            }
+        }
+        private static void Stun(Obj_AI_Hero target)
+        {
+            //TODO: Add mana manager.
+            var prediction = Q.GetPrediction(target);
+
+            var direction = (Player.ServerPosition - prediction.UnitPosition).Normalized();
+            var endOfQ = (Q.Range) * direction;
+            //Modified Vayne condemn logic from DZ191
+            for (int i = 0; i < 30; i++)
+            {
+                var checkPoint = prediction.UnitPosition.Extend(Player.ServerPosition, -Q.Range / 30 * i);
+                var j4Flag = IsJ4FlagThere(checkPoint, target);
+                if (checkPoint.IsWall() || prediction.CollisionObjects.Count == 1 || j4Flag)
+                {
+                    Q.CastIfHitchanceEquals(target, HitChance.High);
+                }
+            }
+        }
+        //Credits to DZ191
+        private static bool IsJ4FlagThere(Vector3 position, Obj_AI_Hero target)
+        {
+            return ObjectManager.Get<Obj_AI_Base>().Any(m => m.Distance(position) <= target.BoundingRadius && m.Name == "Beacon");
+        }
+
+        public static void Flee()
+        {
+            //For fleeing, cast your Q to slow them down. Then AA, since your AA usually has a slow from Meeps
+            //Then cast W on yourself to speed yourself up.
+            //TODO: Check if you have a meep before doing AA.
+            Player.IssueOrder(GameObjectOrder.MoveTo, Game.CursorPos);
+            Obj_AI_Hero target = TargetSelector.GetTarget(Q.Range, TargetSelector.DamageType.Magical);
+            if (Q.IsReady() && target.IsValidTarget())
+                Q.Cast(target);
+            target = TargetSelector.GetTarget(Player.AttackRange, TargetSelector.DamageType.Physical);
+            if (Player.CanAttack)
+                Player.IssueOrder(GameObjectOrder.AttackUnit, target);
+
+            if (W.IsReady())
+            {
+                W.Cast(Game.CursorPos);
+            }
+
+        }
+        #endregion
     }
 }
