@@ -16,7 +16,6 @@ namespace Bard_My_Friend
         public static Menu RootMenu;
         public static Obj_AI_Hero Player;
         public static Orbwalking.Orbwalker Orbwalker;
-        public static List<Vector3> GoToPath = new List<Vector3>();
         public static List<Vector3> chimeLocs;
         public static Vector3 destination;
         public static int WayPointCounter = 0;
@@ -24,7 +23,6 @@ namespace Bard_My_Friend
         public static Spell W = new Spell(SpellSlot.W, 1000f);
         public static Spell E = new Spell(SpellSlot.E, 900f);
         public static Spell R = new Spell(SpellSlot.R, 3400f);
-        public static CombatLogic Combat = new CombatLogic();
 
         public static void Main(string[] args)
         {
@@ -100,8 +98,8 @@ namespace Bard_My_Friend
                 }
             }
 
-            Combat.Heal();
-            Combat.FreezeDragon();
+            Heal();
+            FreezeDragon();
             if(RootMenu.SubMenu("Combo").Item("Combo").IsActive())
                 Combo();
             if (RootMenu.SubMenu("Flee").Item("Run Away").IsActive())
@@ -110,7 +108,7 @@ namespace Bard_My_Friend
                 Flee();
             }
             if (RootMenu.SubMenu("Harass").Item("Harass").IsActive())
-                Combat.Harass();
+                Harass();
 
             
         }
