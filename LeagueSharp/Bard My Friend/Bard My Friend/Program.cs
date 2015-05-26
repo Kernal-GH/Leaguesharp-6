@@ -27,66 +27,92 @@ namespace Bard_My_Friend
         public static void Main(string[] args)
         {
             CustomEvents.Game.OnGameLoad += Game_OnGameLoad;
-            Game.OnUpdate += Game_OnGameUpdate;
-            //We're subscribing to both events since we only need to update chime locations if an object is created or deleted.
-            //TODO: Implement the oncreate and ondelete to get a cache of chimes for less lag and accesses.
-            //GameObject.OnCreate += GameObject_OnCreateObject;
-            //GameObject.OnDelete += GameObject_OnCreateObject;
-            chimeLocs = new List<Vector3>();
-            Q.SetSkillshot(.5f, 50, 1500, false, SkillshotType.SkillshotLine);
-            W.SetSkillshot(.5f, 100, 1000, false, SkillshotType.SkillshotCircle);
-            R.SetSkillshot(.5f, 350, 1500, false, SkillshotType.SkillshotCircle);
+            
         }
         #region Game Overrides
         private static void Game_OnGameLoad(EventArgs args)
         {
-            
-            Player = ObjectManager.Player;
-            RootMenu = new Menu("Bard: My Friend", "Bard", true);
+                Player = ObjectManager.Player;
 
-            Game.PrintChat("Bard My Friend loaded");
+                if (Player.ChampionName != "Bard") return;
+                RootMenu = new Menu("Bard: My Friend", "Bard", true);
 
-            
-            #region MenuPopulation
-            Menu tsMenu = new Menu("Target Selector", "Target Selector");
-            TargetSelector.AddToMenu(tsMenu);
-            RootMenu.AddSubMenu(tsMenu);
+                Game.PrintChat("Bard My Friend loaded");
 
-            RootMenu.AddSubMenu(new Menu("Orbwalking", "Orbwalking"));
-            Orbwalker = new Orbwalking.Orbwalker(RootMenu.SubMenu(("Orbwalking")));
 
-            RootMenu.AddSubMenu(new Menu("Harass", "Harass"));
-            RootMenu.SubMenu("Harass").AddItem(new MenuItem("Harass", "Harass")).SetValue(new KeyBind('C', KeyBindType.Press));
-            RootMenu.SubMenu("Harass").AddItem(new MenuItem("Mana Level", "Mana Level")).SetValue(new Slider(30,0,100));
-            RootMenu.SubMenu("Harass").AddItem(new MenuItem("Use Q", "Use Q")).SetValue(true);
-            RootMenu.SubMenu("Harass").AddItem(new MenuItem("Use Q only when Stun", "Use Q only when Stun")).SetValue(false);
+                #region MenuPopulation
 
-            RootMenu.AddSubMenu(new Menu("Healing", "Healing"));
-            RootMenu.SubMenu("Healing").AddItem(new MenuItem("Health Level", "Health Level")).SetValue(new Slider(30, 0, 100));
-            RootMenu.SubMenu("Healing").AddItem(new MenuItem("Mana Level", "Mana Level")).SetValue(new Slider(30, 0, 100));
+                Menu tsMenu = new Menu("Target Selector", "Target Selector");
+                TargetSelector.AddToMenu(tsMenu);
+                RootMenu.AddSubMenu(tsMenu);
 
-            RootMenu.AddSubMenu(new Menu("Combo", "Combo"));
-            RootMenu.SubMenu("Combo").AddItem(new MenuItem("Combo", "Combo")).SetValue(new KeyBind(' ',KeyBindType.Press));
-            RootMenu.SubMenu("Combo").AddItem(new MenuItem("Use Q", "Use Q")).SetValue(true);
-            RootMenu.SubMenu("Combo").AddItem(new MenuItem("Use W", "Use W")).SetValue(true);
-            RootMenu.SubMenu("Combo").AddItem(new MenuItem("Use Ultimate", "Use Ultimate")).SetValue(true);
-            RootMenu.SubMenu("Combo").AddSubMenu(new Menu("Ultimate", "Ultimate"));
-            RootMenu.SubMenu("Combo").SubMenu("Ultimate").AddItem(new MenuItem("Minimum Ult Range","Minimum Ult Range")).SetValue(new Slider(1500, 0, 3400));
-            RootMenu.SubMenu("Combo").SubMenu("Ultimate").AddItem(new MenuItem("Minimum Enemy Health","Minimum Enemy Health")).SetValue(new Slider(20, 0, 100));
+                RootMenu.AddSubMenu(new Menu("Orbwalking", "Orbwalking"));
+                Orbwalker = new Orbwalking.Orbwalker(RootMenu.SubMenu(("Orbwalking")));
 
-            //RootMenu.SubMenu("Combo").AddItem(new MenuItem("Use E (Experimental)", "Use E")).SetValue(true);
+                RootMenu.AddSubMenu(new Menu("Harass", "Harass"));
+                RootMenu.SubMenu("Harass")
+                    .AddItem(new MenuItem("Harass", "Harass"))
+                    .SetValue(new KeyBind('C', KeyBindType.Press));
+                RootMenu.SubMenu("Harass")
+                    .AddItem(new MenuItem("Mana Level", "Mana Level"))
+                    .SetValue(new Slider(30, 0, 100));
+                RootMenu.SubMenu("Harass").AddItem(new MenuItem("Use Q", "Use Q")).SetValue(true);
+                RootMenu.SubMenu("Harass")
+                    .AddItem(new MenuItem("Use Q only when Stun", "Use Q only when Stun"))
+                    .SetValue(false);
 
-            RootMenu.AddSubMenu(new Menu("Flee", "Flee"));
-            RootMenu.SubMenu("Flee").AddItem(new MenuItem("Run Away", "Run Away").SetValue(new KeyBind('Z', KeyBindType.Press)));
+                RootMenu.AddSubMenu(new Menu("Healing", "Healing"));
+                RootMenu.SubMenu("Healing")
+                    .AddItem(new MenuItem("Health Level", "Health Level"))
+                    .SetValue(new Slider(30, 0, 100));
+                RootMenu.SubMenu("Healing")
+                    .AddItem(new MenuItem("Mana Level", "Mana Level"))
+                    .SetValue(new Slider(30, 0, 100));
 
-            RootMenu.AddSubMenu(new Menu("Get Objects", "Get Objects"));
-            RootMenu.SubMenu("Get Objects").AddItem(new MenuItem("Active", "Active").SetValue(new KeyBind('P', KeyBindType.Press)));
+                RootMenu.AddSubMenu(new Menu("Combo", "Combo"));
+                RootMenu.SubMenu("Combo")
+                    .AddItem(new MenuItem("Combo", "Combo"))
+                    .SetValue(new KeyBind(' ', KeyBindType.Press));
+                RootMenu.SubMenu("Combo").AddItem(new MenuItem("Use Q", "Use Q")).SetValue(true);
+                RootMenu.SubMenu("Combo").AddItem(new MenuItem("Use W", "Use W")).SetValue(true);
+                RootMenu.SubMenu("Combo").AddItem(new MenuItem("Use Ultimate", "Use Ultimate")).SetValue(true);
+                RootMenu.SubMenu("Combo").AddSubMenu(new Menu("Ultimate", "Ultimate"));
+                RootMenu.SubMenu("Combo")
+                    .SubMenu("Ultimate")
+                    .AddItem(new MenuItem("Minimum Ult Range", "Minimum Ult Range"))
+                    .SetValue(new Slider(1500, 0, 3400));
+                RootMenu.SubMenu("Combo")
+                    .SubMenu("Ultimate")
+                    .AddItem(new MenuItem("Minimum Enemy Health", "Minimum Enemy Health"))
+                    .SetValue(new Slider(20, 0, 100));
 
-            RootMenu.AddSubMenu(new Menu("Chimes", "Chimes"));
-            RootMenu.SubMenu("Chimes").AddItem(new MenuItem("Collect Now", "Collect Now").SetValue(new KeyBind('N', KeyBindType.Toggle)));
+                //RootMenu.SubMenu("Combo").AddItem(new MenuItem("Use E (Experimental)", "Use E")).SetValue(true);
 
-            RootMenu.AddToMainMenu();
-            #endregion
+                RootMenu.AddSubMenu(new Menu("Flee", "Flee"));
+                RootMenu.SubMenu("Flee")
+                    .AddItem(new MenuItem("Run Away", "Run Away").SetValue(new KeyBind('Z', KeyBindType.Press)));
+
+                RootMenu.AddSubMenu(new Menu("Get Objects", "Get Objects"));
+                RootMenu.SubMenu("Get Objects")
+                    .AddItem(new MenuItem("Active", "Active").SetValue(new KeyBind('P', KeyBindType.Press)));
+
+                RootMenu.AddSubMenu(new Menu("Chimes", "Chimes"));
+                RootMenu.SubMenu("Chimes")
+                    .AddItem(new MenuItem("Collect Now", "Collect Now").SetValue(new KeyBind('N', KeyBindType.Toggle)));
+
+                RootMenu.AddToMainMenu();
+
+                #endregion
+
+                Game.OnUpdate += Game_OnGameUpdate;
+                //We're subscribing to both events since we only need to update chime locations if an object is created or deleted.
+                //TODO: Implement the oncreate and ondelete to get a cache of chimes for less lag and accesses.
+                //GameObject.OnCreate += GameObject_OnCreateObject;
+                //GameObject.OnDelete += GameObject_OnCreateObject;
+                chimeLocs = new List<Vector3>();
+                Q.SetSkillshot(.5f, 50, 1500, false, SkillshotType.SkillshotLine);
+                W.SetSkillshot(.5f, 100, 1000, false, SkillshotType.SkillshotCircle);
+                R.SetSkillshot(.5f, 350, 1500, false, SkillshotType.SkillshotCircle);
         }
         private static void Game_OnGameUpdate(EventArgs args)
         {
