@@ -18,22 +18,26 @@ namespace Bard_My_Friend
         public static Orbwalking.Orbwalker Orbwalker;
         public static List<Vector3> chimeLocs;
         public static Vector3 destination;
+        public static Boolean onWay = false;
         public static int WayPointCounter = 0;
         public static Spell Q = new Spell(SpellSlot.Q, 950f);
         public static Spell W = new Spell(SpellSlot.W, 1000f);
         public static Spell E = new Spell(SpellSlot.E, 900f);
         public static Spell R = new Spell(SpellSlot.R, 3400f);
-
         public static void Main(string[] args)
         {
             CustomEvents.Game.OnGameLoad += Game_OnGameLoad;
-            Game.OnUpdate += OnGameUpdate;
+            Game.OnUpdate += Game_OnGameUpdate;
+            //We're subscribing to both events since we only need to update chime locations if an object is created or deleted.
+            //TODO: Implement the oncreate and ondelete to get a cache of chimes for less lag and accesses.
+            //GameObject.OnCreate += GameObject_OnCreateObject;
+            //GameObject.OnDelete += GameObject_OnCreateObject;
             chimeLocs = new List<Vector3>();
             Q.SetSkillshot(.5f, 50, 1500, false, SkillshotType.SkillshotLine);
             W.SetSkillshot(.5f, 100, 1000, false, SkillshotType.SkillshotCircle);
-            R.SetSkillshot(.5f, 350, 2000, false, SkillshotType.SkillshotCircle);
+            R.SetSkillshot(.5f, 350, 1500, false, SkillshotType.SkillshotCircle);
         }
-
+        #region Game Overrides
         private static void Game_OnGameLoad(EventArgs args)
         {
             
@@ -52,14 +56,24 @@ namespace Bard_My_Friend
             Orbwalker = new Orbwalking.Orbwalker(RootMenu.SubMenu(("Orbwalking")));
 
             RootMenu.AddSubMenu(new Menu("Harass", "Harass"));
-            RootMenu.SubMenu("Harass").AddItem(new MenuItem("Harass", "Harass")).SetValue(new KeyBind('C',KeyBindType.Press));
+            RootMenu.SubMenu("Harass").AddItem(new MenuItem("Harass", "Harass")).SetValue(new KeyBind('C', KeyBindType.Press));
+            RootMenu.SubMenu("Harass").AddItem(new MenuItem("Mana Level", "Mana Level")).SetValue(new Slider(30,0,100));
             RootMenu.SubMenu("Harass").AddItem(new MenuItem("Use Q", "Use Q")).SetValue(true);
             RootMenu.SubMenu("Harass").AddItem(new MenuItem("Use Q only when Stun", "Use Q only when Stun")).SetValue(false);
+
+            RootMenu.AddSubMenu(new Menu("Healing", "Healing"));
+            RootMenu.SubMenu("Healing").AddItem(new MenuItem("Health Level", "Health Level")).SetValue(new Slider(30, 0, 100));
+            RootMenu.SubMenu("Healing").AddItem(new MenuItem("Mana Level", "Mana Level")).SetValue(new Slider(30, 0, 100));
 
             RootMenu.AddSubMenu(new Menu("Combo", "Combo"));
             RootMenu.SubMenu("Combo").AddItem(new MenuItem("Combo", "Combo")).SetValue(new KeyBind(' ',KeyBindType.Press));
             RootMenu.SubMenu("Combo").AddItem(new MenuItem("Use Q", "Use Q")).SetValue(true);
             RootMenu.SubMenu("Combo").AddItem(new MenuItem("Use W", "Use W")).SetValue(true);
+            RootMenu.SubMenu("Combo").AddItem(new MenuItem("Use Ultimate", "Use Ultimate")).SetValue(true);
+            RootMenu.SubMenu("Combo").AddSubMenu(new Menu("Ultimate", "Ultimate"));
+            RootMenu.SubMenu("Combo").SubMenu("Ultimate").AddItem(new MenuItem("Minimum Ult Range","Minimum Ult Range")).SetValue(new Slider(1500, 0, 3400));
+            RootMenu.SubMenu("Combo").SubMenu("Ultimate").AddItem(new MenuItem("Minimum Enemy Health","Minimum Enemy Health")).SetValue(new Slider(20, 0, 100));
+
             //RootMenu.SubMenu("Combo").AddItem(new MenuItem("Use E (Experimental)", "Use E")).SetValue(true);
 
             RootMenu.AddSubMenu(new Menu("Flee", "Flee"));
@@ -74,14 +88,13 @@ namespace Bard_My_Friend
             RootMenu.AddToMainMenu();
             #endregion
         }
-        private static void OnGameUpdate(EventArgs args)
+        private static void Game_OnGameUpdate(EventArgs args)
         {
-
             if (RootMenu.SubMenu("Chimes").Item("Collect Now").IsActive())
             {
                 int count = GetChimeLocs().Count();
                 var tempDest = GetNextPoint(GetChimeLocs());
-                if (count!=0 && tempDest != destination )
+                if (count != 0 && tempDest != destination)
                 {
                     destination = tempDest;
                     Player.IssueOrder(GameObjectOrder.MoveTo, destination);
@@ -92,12 +105,11 @@ namespace Bard_My_Friend
                             count = 0;
                     }
                 }
-                if (count==0)
+                if (count == 0)
                 {
                     RootMenu.SubMenu("Chimes").Item("Collect Now").SetValue(new KeyBind('N', KeyBindType.Toggle));
                 }
             }
-
             Heal();
             FreezeDragon();
             if(RootMenu.SubMenu("Combo").Item("Combo").IsActive())
@@ -110,49 +122,14 @@ namespace Bard_My_Friend
             if (RootMenu.SubMenu("Harass").Item("Harass").IsActive())
                 Harass();
 
-            
         }
-
-        public static Vector3[] GetConnections(Vector3[] positions)
-        {
-            List<Vector3> posiList = new List<Vector3>();
-            Vector3 start = positions[0];
-            List<Vector3> inOrderList = new List<Vector3>();
-            posiList.AddRange(positions);
-            posiList.RemoveAt(0);
-            //Start with your player's position (position[0]) and set the minimum distance
-            //To the max float value for comparison. From there, loop through every position
-            //For the chimes and if it has a distance lower than the minimum, change the minimum
-            //And store the position as the closest position.
-            //When the closest position is found, remove it from the posiList and add it to the inOrderList.
-            //Set the new start point as that last end point and then repeat until posiList is empty (everything is visited)
-            while (posiList.Count != 0)
-            {
-                var minimum = float.MaxValue;
-                Vector3 tempMin = new Vector3();
-                foreach (Vector3 end in posiList)
-                {
-                    var path = ObjectManager.Player.GetPath(start, end);
-                    var lastPoint = start;
-                    var d = 0f;
-                    foreach (var point in path.Where(point => !point.Equals(lastPoint)))
-                    {
-                        d += lastPoint.Distance(point);
-                        lastPoint = point;
-                    }
-                    if (d < minimum)
-                    {
-                        minimum = d;
-                        tempMin = end;
-                    }
-                }
-                posiList.Remove(tempMin);
-                inOrderList.Add(tempMin);
-                start = tempMin;
-            }
-            return inOrderList.ToArray();
-        }
-
+        //private static void GameObject_OnCreateObject(GameObject obj, EventArgs args)
+        //{
+        //    if(obj.Name.ToLower().Equals("bardchimeminion"))
+        //        GetChimeLocs();
+        //}
+        #endregion
+        #region User-Created Methods
         public static Vector3 GetNextPoint(Vector3[] positions)
         {
             if(positions.Count()==0)
@@ -206,19 +183,20 @@ namespace Bard_My_Friend
             }
             return locations.ToArray();
         }
+        #endregion
         #region Combat Methods
         public static void Harass()
         {
             //TODO: Add mana manager.
-            if (Program.Q.IsReady())
+            if (Q.IsReady() && Player.ManaPercent >= RootMenu.SubMenu("Harass").Item("Mana Level").GetValue<Slider>().Value)
             {
-                Obj_AI_Hero target = TargetSelector.GetTarget(Program.Q.Range, TargetSelector.DamageType.Magical);
+                Obj_AI_Hero target = TargetSelector.GetTarget(Q.Range, TargetSelector.DamageType.Magical);
                 if (target.IsValidTarget())
                 {
-                    if (Program.RootMenu.SubMenu("Harass").Item("Use Q only when Stun").IsActive())
+                    if (RootMenu.SubMenu("Harass").Item("Use Q only when Stun").IsActive())
                         Stun(target);
                     else
-                        Program.Q.Cast(target);
+                        Q.Cast(target);
                 }
             }
         }
@@ -232,10 +210,10 @@ namespace Bard_My_Friend
                 //If they do, cast it on them.
                 //TODO: Change the values to be loaded from the menu.
                 //TODO: Add mana manager.
-                if (Program.W.IsReady())
+                if (W.IsReady() && Player.ManaPercent >= RootMenu.SubMenu("Healing").Item("Mana Level").GetValue<Slider>().Value)
                 {
-                    if (Program.Player.HealthPercent <= 35)
-                        Program.W.Cast(Player.Position);
+                    if (Player.HealthPercent <= RootMenu.SubMenu("Healing").Item("Health Level").GetValue<Slider>().Value )
+                        W.Cast(Player.Position);
                     else
                     {
                         foreach (
@@ -254,7 +232,7 @@ namespace Bard_My_Friend
             Obj_AI_Minion[] objects = LeagueSharp.ObjectManager.Get<Obj_AI_Minion>().ToArray();
             for (int i = 0; i < objects.Length; i++)
             {
-                if ((objects[i].Name.Equals("SRU_Dragon") || objects[i].Name.Equals("SRU_Baron")) && objects[i].Health < 1750)
+                if (((objects[i].Name.ToLower().Contains("dragon") || objects[i].Name.ToLower().Contains("baron")) && objects[i].Health < 2500))
                 {
                     if (Vector3.Distance(objects[i].Position, Player.Position) < 3400f)
                     {
@@ -268,34 +246,43 @@ namespace Bard_My_Friend
                                 else
                                     playercount++;
                         }
-                        if (playercount == 0 && enemycount != 0)
                             R.Cast(objects[i]);
                     }
                 }
+                //if(objects[i].Name.ToLower().Contains("dragon") || objects[i].Name.ToLower().Contains("baron"))
+                //    Game.Say("Found a live drag");
             }
         }
 
         public static void Combo()
         {
+            Obj_AI_Hero target;
             if (Q.IsReady())
             {
-                Obj_AI_Hero target = TargetSelector.GetTarget(Q.Range, TargetSelector.DamageType.Magical);
+                target = TargetSelector.GetTarget(Q.Range, TargetSelector.DamageType.Magical);
                 Stun(target);
                 if (Q.IsReady())
                     Q.Cast();
-                int playercount = 0;
-                int enemycount = 0;
-                foreach (Obj_AI_Hero players in ObjectManager.Get<Obj_AI_Hero>())
-                {
-                    if (Vector3.Distance(target.Position, players.Position) <= 350f)
-                        if (players.IsEnemy)
-                            enemycount++;
-                        else if (!players.IsMe)
-                            playercount++;
-                }
-                if (playercount == 0 && enemycount != 0)
-                    R.CastIfHitchanceEquals(target, HitChance.High);
+                
             }
+            int playercount = 0;
+            int enemycount = 0;
+            target = TargetSelector.GetTarget(R.Range, TargetSelector.DamageType.Magical);
+            foreach (Obj_AI_Hero players in ObjectManager.Get<Obj_AI_Hero>())
+            {
+                if (Vector3.Distance(target.Position, players.Position) <= 350f)
+                    if (players.IsEnemy)
+                        enemycount++;
+                    else if (!players.IsMe)
+                        playercount++;
+            }
+            //Only ult within user defined range.
+            if (playercount == 0 && enemycount != 0 && Vector3.Distance(target.Position, Player.Position) < 3400f &&
+                Vector3.Distance(target.Position, Player.Position) > RootMenu.SubMenu("Combo").SubMenu("Ultimate").Item("Minimum Ult Range").GetValue<Slider>().Value &&
+                !target.UnderTurret() && target.HealthPercent >= RootMenu.SubMenu("Combo").SubMenu("Ultimate").Item("Minimum Enemy Health").GetValue<Slider>().Value
+                && RootMenu.SubMenu("Combo").Item("Use Ultimate").IsActive())
+
+                R.CastIfHitchanceEquals(target, HitChance.High);
         }
         private static void Stun(Obj_AI_Hero target)
         {
