@@ -92,9 +92,13 @@ namespace Bard_My_Friend
                 RootMenu.SubMenu("Flee")
                     .AddItem(new MenuItem("Run Away", "Run Away").SetValue(new KeyBind('Z', KeyBindType.Press)));
 
-                RootMenu.AddSubMenu(new Menu("Get Objects", "Get Objects"));
-                RootMenu.SubMenu("Get Objects")
-                    .AddItem(new MenuItem("Active", "Active").SetValue(new KeyBind('P', KeyBindType.Press)));
+
+                RootMenu.AddSubMenu(new Menu("Monster Freeze", "Monster Freeze"));
+                RootMenu.SubMenu("Monster Freeze").AddItem(new MenuItem("Freeze Dragon", "Freeze Dragon").SetValue(true));
+                RootMenu.SubMenu("Monster Freeze").AddItem(new MenuItem("Freeze Baron", "Freeze Baron").SetValue(true));
+                //RootMenu.AddSubMenu(new Menu("Get Objects", "Get Objects"));
+                //RootMenu.SubMenu("Get Objects")
+                //    .AddItem(new MenuItem("Active", "Active").SetValue(new KeyBind('P', KeyBindType.Press)));
 
                 RootMenu.AddSubMenu(new Menu("Chimes", "Chimes"));
                 RootMenu.SubMenu("Chimes")
@@ -258,7 +262,9 @@ namespace Bard_My_Friend
             Obj_AI_Minion[] objects = LeagueSharp.ObjectManager.Get<Obj_AI_Minion>().ToArray();
             for (int i = 0; i < objects.Length; i++)
             {
-                if (((objects[i].Name.ToLower().Contains("dragon") || objects[i].Name.ToLower().Contains("baron")) && objects[i].Health < 2500))
+                if ((((objects[i].Name.ToLower().Contains("dragon") && RootMenu.SubMenu("Monster Freeze").Item("Freeze Dragon").IsActive()) || 
+                    (objects[i].Name.ToLower().Contains("baron")  && RootMenu.SubMenu("Monster Freeze").Item("Freeze Baron").IsActive()) 
+                    && objects[i].Health < 2500)))
                 {
                     if (Vector3.Distance(objects[i].Position, Player.Position) < 3400f)
                     {
@@ -266,12 +272,13 @@ namespace Bard_My_Friend
                         int enemycount = 0;
                         foreach (Obj_AI_Hero players in ObjectManager.Get<Obj_AI_Hero>())
                         {
-                            if (Vector3.Distance(objects[i].Position, players.Position) <= 350f)
+                            if (Vector3.Distance(objects[i].Position, players.Position) <= 650f)
                                 if (players.IsEnemy)
                                     enemycount++;
-                                else
+                                else if(!players.IsMe)
                                     playercount++;
                         }
+                        if(playercount==0 && enemycount!=0)
                             R.Cast(objects[i]);
                     }
                 }
