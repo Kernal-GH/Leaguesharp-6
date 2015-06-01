@@ -1,13 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Diagnostics;
 using SharpDX;
 using LeagueSharp;
 using LeagueSharp.Common;
-using System.Net;
 
 namespace GarenteedFreelo
 {
@@ -197,7 +193,7 @@ namespace GarenteedFreelo
                         dead = false;
                 }
                 //If near the shop or dead and you either A) don't have a Sweeper or B) don't have sight wards, buy them.  I assume everyone has enough money for it
-                if ((Utility.InShop((Obj_AI_Hero)ObjectManager.Player) || ObjectManager.Player.IsDead) && (!Items.HasItem(3341, (Obj_AI_Hero)ObjectManager.Player) || !Items.HasItem(2044, (Obj_AI_Hero)ObjectManager.Player)))
+                if ((Utility.InShop(ObjectManager.Player) || ObjectManager.Player.IsDead) && (!Items.HasItem(3341, ObjectManager.Player) || !Items.HasItem(2044, ObjectManager.Player)))
                 {
                     ObjectManager.Player.BuyItem(ItemId.Sweeping_Lens_Trinket);
                     ObjectManager.Player.BuyItem(ItemId.Stealth_Ward);
