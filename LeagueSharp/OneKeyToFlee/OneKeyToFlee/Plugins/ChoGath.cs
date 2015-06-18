@@ -28,7 +28,7 @@ namespace OneKeyToFlee.Plugins
 
         private static readonly Dictionary<Spell, EscapeType> spells = new Dictionary<Spell, EscapeType>
         {
-            {new Spell(SpellSlot.Q, 950), EscapeType.Self},
+            {new Spell(SpellSlot.Q, 950), EscapeType.Enemy},
             {new Spell(SpellSlot.W, 700), EscapeType.Enemy},
             {new Spell(SpellSlot.E, 500), EscapeType.Not},
             {new Spell(SpellSlot.R, 175), EscapeType.Not}
