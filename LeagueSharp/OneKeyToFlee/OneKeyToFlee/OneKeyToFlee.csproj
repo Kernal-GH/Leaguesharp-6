@@ -53,7 +53,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Nautilus.cs" />
+    <Compile Include="Plugins\Nautilus.cs" />
     <Compile Include="Plugins\Aatrox.cs" />
     <Compile Include="Plugins\Ahri.cs" />
     <Compile Include="Plugins\Akali.cs" />
