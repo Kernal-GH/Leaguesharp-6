@@ -71,7 +71,7 @@ namespace NotepadSharp
             noteBox.Y = rootMenu.SubMenu("Position").Item("Y").GetValue<Slider>().Value;
             //Play with these values a bit; assuming 12 pixels high for each note and 4 pixels wide for each letter.
             int height = notes.Count*15;
-            int width = (notes.Aggregate("", (max, cur) => max.Length > cur.Length ? max : cur).Length + 3) * 9;
+            int width = (notes.Aggregate("", (max, cur) => max.Length > cur.Length ? max : cur).Length + 3) * 10;
             noteBox.Height = height;
             noteBox.Width = width;
             drawLines();
