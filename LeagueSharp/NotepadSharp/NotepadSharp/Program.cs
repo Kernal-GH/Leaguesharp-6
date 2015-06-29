@@ -67,7 +67,6 @@ namespace NotepadSharp
 
         private static void OnDraw(EventArgs e)
         {
-            Drawing.DrawText(10,10,System.Drawing.Color.Black, notes.Count.ToString());
             noteBox.X = rootMenu.SubMenu("Position").Item("X").GetValue<Slider>().Value;
             noteBox.Y = rootMenu.SubMenu("Position").Item("Y").GetValue<Slider>().Value;
             //Play with these values a bit; assuming 12 pixels high for each note and 4 pixels wide for each letter.
