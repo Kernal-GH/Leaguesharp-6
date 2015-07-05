@@ -27,7 +27,8 @@ namespace Bard_My_Friend
         public static void Main(string[] args)
         {
             CustomEvents.Game.OnGameLoad += Game_OnGameLoad;
-            
+            Orbwalking.BeforeAttack += BlockAA;
+
         }
         #region Game Overrides
         private static void Game_OnGameLoad(EventArgs args)
@@ -48,6 +49,7 @@ namespace Bard_My_Friend
 
                 RootMenu.AddSubMenu(new Menu("Orbwalking", "Orbwalking"));
                 Orbwalker = new Orbwalking.Orbwalker(RootMenu.SubMenu(("Orbwalking")));
+                RootMenu.SubMenu("Orbwalking").AddItem(new MenuItem("Block last hit", "Block last hit")).SetValue(true);
 
                 RootMenu.AddSubMenu(new Menu("Harass", "Harass"));
                 RootMenu.SubMenu("Harass")
@@ -60,8 +62,17 @@ namespace Bard_My_Friend
                 RootMenu.SubMenu("Harass")
                     .AddItem(new MenuItem("Use Q only when Stun", "Use Q only when Stun"))
                     .SetValue(false);
+                RootMenu.SubMenu("Harass").AddItem(new MenuItem("Q Hitchance", "Q Hitchance")).SetValue(new StringList(
+                new[]
+                {
+                    HitChance.Low.ToString(),
+                    HitChance.Medium.ToString(),
+                    HitChance.High.ToString(),
+                    HitChance.VeryHigh.ToString()
+                }));
 
                 RootMenu.AddSubMenu(new Menu("Healing", "Healing"));
+                RootMenu.SubMenu("Healing").AddItem(new MenuItem("Enabled", "Enabled")).SetValue(true);
                 RootMenu.SubMenu("Healing")
                     .AddItem(new MenuItem("Health Level", "Health Level"))
                     .SetValue(new Slider(30, 0, 100));
@@ -74,6 +85,14 @@ namespace Bard_My_Friend
                     .AddItem(new MenuItem("Combo", "Combo"))
                     .SetValue(new KeyBind(' ', KeyBindType.Press));
                 RootMenu.SubMenu("Combo").AddItem(new MenuItem("Use Q", "Use Q")).SetValue(true);
+                RootMenu.SubMenu("Combo").AddItem(new MenuItem("Q Hitchance", "Q Hitchance")).SetValue(new StringList(
+                   new[]
+                {
+                    HitChance.Low.ToString(),
+                    HitChance.Medium.ToString(),
+                    HitChance.High.ToString(),
+                    HitChance.VeryHigh.ToString()
+                }));
                 RootMenu.SubMenu("Combo").AddItem(new MenuItem("Use W", "Use W")).SetValue(true);
                 RootMenu.SubMenu("Combo").AddItem(new MenuItem("Use Ultimate", "Use Ultimate")).SetValue(true);
                 RootMenu.SubMenu("Combo").AddSubMenu(new Menu("Ultimate", "Ultimate"));
@@ -118,6 +137,28 @@ namespace Bard_My_Friend
                 W.SetSkillshot(.5f, 100, 1000, false, SkillshotType.SkillshotCircle);
                 R.SetSkillshot(.5f, 350, 1500, false, SkillshotType.SkillshotCircle);
         }
+
+        private static void BlockAA(Orbwalking.BeforeAttackEventArgs arg)
+        {
+            if (RootMenu.SubMenu("Orbwalking").Item("Block last hit").IsActive() && arg.Target is Obj_AI_Minion && Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.LaneClear)
+                arg.Process = false;
+        }
+        private static HitChance GetHitChance(string submenu, string chanceItem)
+        {
+            var hc = RootMenu.SubMenu(submenu).Item(chanceItem).GetValue<StringList>();
+            switch (hc.SList[hc.SelectedIndex])
+            {
+                case "Low":
+                    return HitChance.Low;
+                case "Medium":
+                    return HitChance.Medium;
+                case "High":
+                    return HitChance.High;
+                case "Very High":
+                    return HitChance.VeryHigh;
+            }
+            return HitChance.High;
+        }
         private static void Game_OnGameUpdate(EventArgs args)
         {
             if (RootMenu.SubMenu("Chimes").Item("Collect Now").IsActive())
@@ -140,7 +181,8 @@ namespace Bard_My_Friend
                     RootMenu.SubMenu("Chimes").Item("Collect Now").SetValue(new KeyBind('N', KeyBindType.Toggle));
                 }
             }
-            Heal();
+            if (RootMenu.SubMenu("Healing").Item("Enabled").IsActive())
+                Heal();
             FreezeDragon();
             if(RootMenu.SubMenu("Combo").Item("Combo").IsActive())
                 Combo();
@@ -153,11 +195,6 @@ namespace Bard_My_Friend
                 Harass();
 
         }
-        //private static void GameObject_OnCreateObject(GameObject obj, EventArgs args)
-        //{
-        //    if(obj.Name.ToLower().Equals("bardchimeminion"))
-        //        GetChimeLocs();
-        //}
         #endregion
         #region User-Created Methods
         public static Vector3 GetNextPoint(Vector3[] positions)
@@ -215,10 +252,12 @@ namespace Bard_My_Friend
         }
         #endregion
         #region Combat Methods
+
+
         public static void Harass()
         {
             //TODO: Add mana manager.
-            if (Q.IsReady() && Player.ManaPercent >= RootMenu.SubMenu("Harass").Item("Mana Level").GetValue<Slider>().Value)
+            if (Player.ManaPercent >= RootMenu.SubMenu("Harass").Item("Mana Level").GetValue<Slider>().Value &&Q.IsReady())
             {
                 Obj_AI_Hero target = TargetSelector.GetTarget(Q.Range, TargetSelector.DamageType.Magical);
                 if (target.IsValidTarget())
@@ -226,7 +265,7 @@ namespace Bard_My_Friend
                     if (RootMenu.SubMenu("Harass").Item("Use Q only when Stun").IsActive())
                         Stun(target);
                     else
-                        Q.Cast(target);
+                        Q.CastIfHitchanceEquals(target, GetHitChance("Harass", "Q Hitchance"));
                 }
             }
         }
@@ -247,10 +286,10 @@ namespace Bard_My_Friend
                     else
                     {
                         foreach (
-                            Obj_AI_Hero friendlies in ObjectManager.Get<Obj_AI_Hero>().Where(allies => !allies.IsEnemy))
+                            Obj_AI_Hero friendlies in ObjectManager.Get<Obj_AI_Hero>().Where(allies => !allies.IsEnemy && !allies.IsDead))
                         {
                             if (Vector3.Distance(Player.Position, friendlies.Position) < 1000f &&
-                                friendlies.HealthPercent < 35)
+                                friendlies.HealthPercent <= RootMenu.SubMenu("Healing").Item("Health Level").GetValue<Slider>().Value)
                                 W.Cast(friendlies.Position);
                         }
                     }
@@ -282,8 +321,6 @@ namespace Bard_My_Friend
                             R.Cast(objects[i]);
                     }
                 }
-                //if(objects[i].Name.ToLower().Contains("dragon") || objects[i].Name.ToLower().Contains("baron"))
-                //    Game.Say("Found a live drag");
             }
         }
 
@@ -295,8 +332,8 @@ namespace Bard_My_Friend
                 target = TargetSelector.GetTarget(Q.Range, TargetSelector.DamageType.Magical);
                 Stun(target);
                 if (Q.IsReady())
-                    Q.Cast();
-                
+                    Q.CastIfHitchanceEquals(target, GetHitChance("Combo", "Q Hitchance"));
+
             }
             int playercount = 0;
             int enemycount = 0;
