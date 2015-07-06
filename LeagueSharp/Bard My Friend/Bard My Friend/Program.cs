@@ -49,7 +49,7 @@ namespace Bard_My_Friend
 
                 RootMenu.AddSubMenu(new Menu("Orbwalking", "Orbwalking"));
                 Orbwalker = new Orbwalking.Orbwalker(RootMenu.SubMenu(("Orbwalking")));
-                RootMenu.SubMenu("Orbwalking").AddItem(new MenuItem("Block last hit", "Block last hit")).SetValue(true);
+                RootMenu.AddItem(new MenuItem("Block last hit", "Block last hit")).SetValue(true);
 
                 RootMenu.AddSubMenu(new Menu("Harass", "Harass"));
                 RootMenu.SubMenu("Harass")
@@ -140,8 +140,11 @@ namespace Bard_My_Friend
 
         private static void BlockAA(Orbwalking.BeforeAttackEventArgs arg)
         {
-            if (RootMenu.SubMenu("Orbwalking").Item("Block last hit").IsActive() && arg.Target is Obj_AI_Minion && Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.LaneClear)
+            if (RootMenu.Item("Block last hit").IsActive() && arg.Target is Obj_AI_Minion &&
+                Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.LaneClear)
                 arg.Process = false;
+            else
+                arg.Process = true;
         }
         private static HitChance GetHitChance(string submenu, string chanceItem)
         {
