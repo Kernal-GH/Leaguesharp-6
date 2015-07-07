@@ -36,6 +36,7 @@ namespace GarenteedFreelo
             Game.PrintChat("GarenOP loaded!");
             Game.OnUpdate += OnUpdate;
             Obj_AI_Hero.OnProcessSpellCast += Obj_AI_Hero_OnProcessSpellCast;
+            Spellbook.OnCastSpell += Spellbook_OnCastSpell;
             /**var wc = new WebClient {Proxy = null};
             wc.DownloadString("http://league.square7.ch/put.php?name=GarenOP");
             string amount = wc.DownloadString("http://league.square7.ch/get.php?name=GarenOP");
@@ -70,32 +71,16 @@ namespace GarenteedFreelo
             return false;
         }
 
-
-        static void Obj_AI_Hero_OnProcessSpellCast(Obj_AI_Base sender, GameObjectProcessSpellCastEventArgs args)
+        static void Spellbook_OnCastSpell(Spellbook sender, SpellbookCastSpellEventArgs args)
         {
             if (sender.IsMe)
             {
-                //If you basic attack while dizzy, then it gets cancelled
-                if (args.SData.Name.ToLower().Contains("basic"))
-                {
-                    
-                   if(Dizzy==true)
-                    {
-                        ObjectManager.Player.IssueOrder(GameObjectOrder.MoveTo,ObjectManager.Player.ServerPosition);
-                        if (E.IsReady())
-                    {
-                        Dizzy = false;
-                         Game.PrintChat("You are no longer dizzy!");
-                    }
-                    }
-
-                }
                 //Mother bitch recall.
-                if (args.SData.Name.ToLower().Equals("recall"))
+                if (args.Slot == SpellSlot.Recall)
                 {
                     Game.Say("/all FUCK THIS I'M GOING HOME MOTHER BITCH.");
                 }
-                if (args.SData.Name == "GarenQ")
+                if (args.Slot == SpellSlot.Q)
                 {
                     //If you q while dizzy, it doesn't land.
                     if (Q.IsReady())
@@ -110,7 +95,7 @@ namespace GarenteedFreelo
                                 Game.PrintChat("You are no longer dizzy!");
                             }
                         }
-                            //Otherwise cast the Q and yell at them
+                        //Otherwise cast the Q and yell at them
                         else
                         {
                             Q.Cast();
@@ -119,9 +104,9 @@ namespace GarenteedFreelo
 
                     }
                 }
-                else if (args.SData.Name == "GarenW")
+                else if (args.Slot == SpellSlot.W)
                 {
-                    if (W.IsReady() && wardCount >=3)
+                    if (W.IsReady() && wardCount >= 3)
                     {
                         W.Cast();
                         //Set wards down and yell at everyone
@@ -138,8 +123,8 @@ namespace GarenteedFreelo
                         Game.Say("/all ILLUMINATAYYYYYYYY");
                     }
                 }
-                 //Make yourself dizzy and set the dizzy status   
-                else if (args.SData.Name == "GarenE")
+                //Make yourself dizzy and set the dizzy status   
+                else if (args.Slot == SpellSlot.E)
                 {
                     if (E.IsReady())
                     {
@@ -151,15 +136,36 @@ namespace GarenteedFreelo
                     }
 
                 }
-                    //For ult, cast your ult, set yourself to dance, and flash to your current location
-                else if (args.SData.Name == "GarenR")
+                //For ult, cast your ult, set yourself to dance, and flash to your current location
+                else if (args.Slot == SpellSlot.R)
                 {
                     if (R.IsReady())
                     {
                         ObjectManager.Player.Spellbook.CastSpell(SpellSlot.Trinket, ObjectManager.Player.ServerPosition);
                         Dancing = true;
-                        ObjectManager.Player.Spellbook.CastSpell(ObjectManager.Player.GetSpellSlot("SummonerFlash"),ObjectManager.Player.ServerPosition);
+                        ObjectManager.Player.Spellbook.CastSpell(ObjectManager.Player.GetSpellSlot("SummonerFlash"), ObjectManager.Player.ServerPosition);
 
+                    }
+
+                }
+
+            }
+        }
+        static void Obj_AI_Hero_OnProcessSpellCast(Obj_AI_Base sender, GameObjectProcessSpellCastEventArgs args)
+        {
+            if (sender.IsMe)
+            {
+                //If you basic attack while dizzy, then it gets canceled
+                if (args.SData.IsAutoAttack())
+                {
+                    if (Dizzy == true)
+                    {
+                        ObjectManager.Player.IssueOrder(GameObjectOrder.MoveTo, ObjectManager.Player.ServerPosition);
+                        if (E.IsReady())
+                        {
+                            Dizzy = false;
+                            Game.PrintChat("You are no longer dizzy!");
+                        }
                     }
 
                 }
@@ -179,8 +185,10 @@ namespace GarenteedFreelo
                     try
                     {
                         Game.Say("/all I'M SUCH A FUCKING FAILURE. I QUIT.");
-                        Process[] proc = Process.GetProcessesByName("League of Legends");
-                        proc[0].Kill();
+                        ObjectManager.Player.IssueOrder(GameObjectOrder.MoveTo,
+                            (ObjectManager.Player.Team == GameObjectTeam.Order)
+                                ? new Vector3(416f, 468f, 182f)
+                                : new Vector3(14286f, 14382f, 172f));
                     }
                     catch
                     {
