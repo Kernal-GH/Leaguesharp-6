@@ -73,7 +73,7 @@ namespace GarenteedFreelo
 
         static void Spellbook_OnCastSpell(Spellbook sender, SpellbookCastSpellEventArgs args)
         {
-            if (sender.IsMe)
+            if (sender.Owner.IsMe)
             {
                 //Mother bitch recall.
                 if (args.Slot == SpellSlot.Recall)
