@@ -196,7 +196,7 @@ namespace TahmSDKench
                     if (target != null)
                     {
                         Q.Cast(target);
-                        if (target.Distance(Player) <= 250 && !usedWEnemy)
+                        if (target.Distance(Player) <= 250 && !usedWEnemy && !usedWMinion)
                             W.CastOnUnit(target);
                         else if (!usedWEnemy && !usedWMinion)
                         {
