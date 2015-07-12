@@ -280,7 +280,7 @@ namespace TahmSDKench
                         x => x.HealthPercent < mainMenu["Shield"]["Devour Ally at Percent HP"].GetValue<MenuSlider>().Value 
                             && Player.Distance(x) <= 500
                             && !x.IsDead);
-                if (swallowAlly != null && swallowAlly.HealthPercent < mainMenu["Shield"]["Devour Ally at Percent HP"].GetValue<MenuSlider>().Value && !usedWEnemy && W.IsReady())
+                if (swallowAlly != null && !usedWEnemy && W.IsReady())
                 {
                     W.CastOnUnit(swallowAlly);
                 }
