@@ -87,18 +87,18 @@ namespace GarenteedFreelo
                     {
                         if (Dizzy == true)
                         {
+                            args.Process = false;
                             //So cancel the ability and then check dizzy status again
                             ObjectManager.Player.IssueOrder(GameObjectOrder.MoveTo, ObjectManager.Player.ServerPosition);
                             if (E.IsReady())
                             {
                                 Dizzy = false;
-                                Game.PrintChat("You are no longer dizzy!");
+                                //Game.PrintChat("You are no longer dizzy!");
                             }
                         }
                         //Otherwise cast the Q and yell at them
                         else
                         {
-                            Q.Cast();
                             Game.Say("/all SILENZZZ SKRUBZZZ");
                         }
 
@@ -108,7 +108,6 @@ namespace GarenteedFreelo
                 {
                     if (W.IsReady() && wardCount >= 3)
                     {
-                        W.Cast();
                         //Set wards down and yell at everyone
                         Vector2 pos = ObjectManager.Player.ServerPosition.To2D();
                         pos.Y += 80;
@@ -128,7 +127,6 @@ namespace GarenteedFreelo
                 {
                     if (E.IsReady())
                     {
-                        E.Cast();
                         Dizzy = true;
                         Game.Say("/all I'M TOO DIZZY. I CANNOT SEE!!!!11");
 
@@ -141,6 +139,8 @@ namespace GarenteedFreelo
                 {
                     if (R.IsReady())
                     {
+                        Game.Say("/all ILLUMINATI DANCE PARTY!!!");
+                        args.Process = false;
                         ObjectManager.Player.Spellbook.CastSpell(SpellSlot.Trinket, ObjectManager.Player.ServerPosition);
                         Dancing = true;
                         ObjectManager.Player.Spellbook.CastSpell(ObjectManager.Player.GetSpellSlot("SummonerFlash"), ObjectManager.Player.ServerPosition);
