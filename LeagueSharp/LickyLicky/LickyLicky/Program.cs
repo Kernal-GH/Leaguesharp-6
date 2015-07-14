@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Drawing.Configuration;
 using System.Linq;
 using System.Windows.Forms;
 using SharpDX;
+using System.Text;
 using LeagueSharp;
 using LeagueSharp.Common;
 using Menu = LeagueSharp.Common.Menu;
@@ -16,9 +19,18 @@ namespace LickyLicky
         private static Obj_AI_Hero Player;
         private static string buffName = "TahmKenchPDebuffCounter";
         private static string tahmSlow = "tahmkenchwhasdevouredtarget";
+        private static SwallowedTarget current = SwallowedTarget.None;
         private static bool usedWEnemy = false;
         private static bool usedWMinion = false;
         private static Spell Q, W, W2, E, R;
+
+        enum SwallowedTarget
+        {
+            Enemy,
+            Ally,
+            Minion,
+            None
+        }
         static void Main(string[] args)
         {
             try
@@ -39,8 +51,8 @@ namespace LickyLicky
             Q = new Spell(SpellSlot.Q, 800);
             Q.SetSkillshot(.1f, 75, 2000, true, SkillshotType.SkillshotLine);
             W = new Spell(SpellSlot.W, 250);
-            W2 = new Spell(SpellSlot.W, 700); //Not too sure on this value
-            W2.SetSkillshot(.1f, 75, 1500, true, SkillshotType.SkillshotLine); //Not sure on these values either.
+            W2 = new Spell(SpellSlot.W, 900); //Not too sure on this value
+            W2.SetSkillshot(.1f, 75, 900, true, SkillshotType.SkillshotLine); //Not sure on these values either.
             E = new Spell(SpellSlot.E);
             R = new Spell(SpellSlot.R, 4000);
 
@@ -48,7 +60,8 @@ namespace LickyLicky
             Game.OnUpdate += OnUpdate;
             Obj_AI_Base.OnProcessSpellCast += OnProcessSpell;
             Interrupter2.OnInterruptableTarget += OnInterruptableSpell;
-            
+            Drawing.OnDraw += Drawing_OnDraw;
+
         }
 
         static void PopulateMenu()
@@ -103,6 +116,11 @@ namespace LickyLicky
             Menu orbwalkingMenu = new Menu("Orbwalking", "Orbwalking");
             Orbwalking.Orbwalker walker = new Orbwalking.Orbwalker(orbwalkingMenu);
 
+            Menu drawingMenu = new Menu("Drawing","Drawing");
+            drawingMenu.AddItem(new MenuItem("Draw Q", "Draw Q").SetValue(true));
+            drawingMenu.AddItem(new MenuItem("Draw W", "Draw W").SetValue(true));
+            drawingMenu.AddItem(new MenuItem("Draw Max W Movement", "Draw Max W Movement").SetValue(true));
+
             mainMenu.AddSubMenu(orbwalkingMenu);
             mainMenu.AddSubMenu(harassMenu);
             mainMenu.AddSubMenu(shieldMenu);
@@ -110,6 +128,7 @@ namespace LickyLicky
             mainMenu.AddSubMenu(fleeMenu);
             mainMenu.AddSubMenu(comboMenu);
             mainMenu.AddSubMenu(miscMenu);
+            mainMenu.AddSubMenu(drawingMenu);
 
             mainMenu.AddToMainMenu();
         }
@@ -119,12 +138,10 @@ namespace LickyLicky
                 return;
 
             //Arbitrary until I figure out how the Tahm W slow is found in code.
-            if (Player.HasBuff(tahmSlow) && Player.MoveSpeed < 150)
+            if (current == SwallowedTarget.Enemy && Player.MoveSpeed < 150)
             {
                 moveToPosition();
-                usedWEnemy = true;
             }
-            else usedWEnemy = false;
 
             if (mainMenu.Item("Killsteal").IsActive())
             {
@@ -132,9 +149,26 @@ namespace LickyLicky
                 {
                     Obj_AI_Hero target =
                         ObjectManager.Get<Obj_AI_Hero>().FirstOrDefault(
-                            x => x.Health <= Player.GetSpellDamage(x, SpellSlot.Q) && x.IsEnemy && x.Distance(Player) <= 650);
+                            x => x.Health <= Math.Max(Player.GetSpellDamage(x, SpellSlot.Q), Player.GetSpellDamage(x, SpellSlot.W)) && x.IsEnemy && x.Distance(Player) <= 650 && !x.IsDead);
+                    Spell s = (Player.GetSpellDamage(target, SpellSlot.Q) > Player.GetSpellDamage(target, SpellSlot.W)) ? Q : W;
                     if (target != null)
-                        Q.Cast(target);
+                    {
+                        if(s.Slot == SpellSlot.Q)
+                        s.Cast(target);
+                        else if(current==SwallowedTarget.None || current ==SwallowedTarget.Minion)
+                        {
+                            if (target.GetBuffCount(buffName)==3 && current==SwallowedTarget.None && target.Distance(Player)<=300f)
+                                W.CastOnUnit(target);
+                            else if(current==SwallowedTarget.None)
+                                W.CastOnUnit(
+                                    ObjectManager.Get<Obj_AI_Minion>()
+                                        .Where(x => x.IsEnemy)
+                                        .OrderBy(x => x.Distance(Player))
+                                        .First());
+                            else
+                                W2.Cast(target);
+                        }
+                    }
                 }
                 catch { }
             }
@@ -160,7 +194,7 @@ namespace LickyLicky
                             break;
                         case 3:
                             Q.Cast(target);
-                            if (!usedWEnemy)
+                            if (current == SwallowedTarget.None)
                                 W.CastOnUnit(target);
                             break;
                     }
@@ -179,17 +213,15 @@ namespace LickyLicky
                     if (target != null)
                     {
                         Q.Cast(target);
-                        if (target.Distance(Player) <= 250 && !usedWEnemy && target.GetBuffCount(buffName) ==3 && !usedWMinion)
+                        if (target.Distance(Player) <= 250 && target.GetBuffCount(buffName) ==3 && current == SwallowedTarget.None)
                             W.CastOnUnit(target);
-                        else if (!usedWEnemy && !usedWMinion)
+                        else if (current == SwallowedTarget.None)
                         {
                             W.CastOnUnit(ObjectManager.Get<Obj_AI_Minion>().Where(x=> x.IsEnemy).OrderBy(x => x.Distance(Player)).First());
-                            usedWMinion = true;
                         }
-                        else if (usedWMinion)
+                        else if (current == SwallowedTarget.Minion)
                         {
                             W2.Cast(target.Position);
-                            usedWMinion = false;
                         }
                     }
                 }
@@ -223,7 +255,7 @@ namespace LickyLicky
                             x => x.HealthPercent < mainMenu.SubMenu("Shield").Item("Devour Ally at Percent HP").GetValue<Slider>().Value
                                 && x.IsAlly && Player.Distance(x) <= 500
                                 && !x.IsDead);
-                        if (swallowAlly != null)
+                        if (current == SwallowedTarget.None)
                             W.CastOnUnit(swallowAlly);
 
                     }catch { }
@@ -259,13 +291,12 @@ namespace LickyLicky
             {
                 try
                 {
-
                     var swallowAlly =
                         ObjectManager.Get<Obj_AI_Hero>().FirstOrDefault(
                             x => x.HealthPercent < mainMenu.SubMenu("Shield").Item("Devour Ally at Percent HP").GetValue<Slider>().Value
                                 && x.IsAlly && Player.Distance(x) <= 500
                                 && !x.IsDead);
-                    if (swallowAlly != null && !usedWEnemy && W.IsReady())
+                    if (swallowAlly != null && current ==SwallowedTarget.None && W.IsReady())
                     {
                         W.CastOnUnit(swallowAlly);
                     }
@@ -285,9 +316,22 @@ namespace LickyLicky
                 }
                 catch { }
             }
+            else if (sender.IsMe)
+            {
+                SpellSlot s = Player.Spellbook.Spells.First(x => x.SData.Name == args.SData.Name).Slot;
+                if (s.ToString().Equals("W"))
+                {
+                    if (args.Target.Type == GameObjectType.obj_AI_Hero)
+                        current = (args.Target.IsAlly) ? SwallowedTarget.Ally : SwallowedTarget.Enemy;
+                    else
+                        current = SwallowedTarget.Minion;
+
+                }
+                else if(s.ToString().Equals("46"))
+                    current = SwallowedTarget.None;
+                
+            }
         }
-
-
 
         static void OnInterruptableSpell(object enemy, Interrupter2.InterruptableTargetEventArgs args)
         {
@@ -315,6 +359,24 @@ namespace LickyLicky
 
             }
             catch{}
+        }
+
+        private static void Drawing_OnDraw(EventArgs args)
+        {
+            if (Player.IsDead)
+                return;
+            if(mainMenu.SubMenu("Drawing").Item("Draw Q").IsActive())
+                Render.Circle.DrawCircle(Player.Position, Q.Range, System.Drawing.Color.Red);
+            if (mainMenu.SubMenu("Drawing").Item("Draw W").IsActive())
+            {
+                if(current == SwallowedTarget.None)
+                    Render.Circle.DrawCircle(Player.Position, W.Range, System.Drawing.Color.Green);
+                else if (current == SwallowedTarget.Minion)
+                    Render.Circle.DrawCircle(Player.Position, W2.Range, System.Drawing.Color.Green);
+            }
+            if (mainMenu.SubMenu("Drawing").Item("Draw Max W Movement").IsActive() && current == SwallowedTarget.None)
+                Render.Circle.DrawCircle(Player.Position, ((Player.MoveSpeed * .05f *.05f) +110) * 4, System.Drawing.Color.MediumSpringGreen);
+
         }
     }
 }
