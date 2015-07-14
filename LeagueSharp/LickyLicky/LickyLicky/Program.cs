@@ -188,13 +188,16 @@ namespace LickyLicky
                         case -1:
                         case 1:
                         case 2:
+                            if(mainMenu.SubMenu("Combo").Item("Use Q").IsActive())
                             Q.Cast(target);
                             if (target.Distance(Player) <= 200)
                                 Player.IssueOrder(GameObjectOrder.AttackUnit, target);
                             break;
                         case 3:
+                            if(mainMenu.SubMenu("Combo").Item("Use Q").IsActive())
                             Q.Cast(target);
-                            if (current == SwallowedTarget.None)
+
+                            if (current == SwallowedTarget.None && mainMenu.SubMenu("Combo").Item("Use W").IsActive())
                                 W.CastOnUnit(target);
                             break;
                     }
@@ -212,14 +215,15 @@ namespace LickyLicky
                             .FirstOrDefault();
                     if (target != null)
                     {
+                        if (mainMenu.SubMenu("Harass").Item("Use Q").IsActive())
                         Q.Cast(target);
-                        if (target.Distance(Player) <= 250 && target.GetBuffCount(buffName) ==3 && current == SwallowedTarget.None)
+                        if (target.Distance(Player) <= 250 && target.GetBuffCount(buffName) == 3 && current == SwallowedTarget.None && mainMenu.SubMenu("Harass").Item("Use W").IsActive())
                             W.CastOnUnit(target);
-                        else if (current == SwallowedTarget.None)
+                        else if (current == SwallowedTarget.None && mainMenu.SubMenu("Harass").Item("Use W").IsActive())
                         {
                             W.CastOnUnit(ObjectManager.Get<Obj_AI_Minion>().Where(x=> x.IsEnemy).OrderBy(x => x.Distance(Player)).First());
                         }
-                        else if (current == SwallowedTarget.Minion)
+                        else if (current == SwallowedTarget.Minion && mainMenu.SubMenu("Harass").Item("Use W").IsActive())
                         {
                             W2.Cast(target.Position);
                         }
