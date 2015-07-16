@@ -27,8 +27,6 @@ namespace Bard_My_Friend
         public static void Main(string[] args)
         {
             CustomEvents.Game.OnGameLoad += Game_OnGameLoad;
-            Orbwalking.BeforeAttack += BlockAA;
-
         }
         #region Game Overrides
         private static void Game_OnGameLoad(EventArgs args)
@@ -128,6 +126,7 @@ namespace Bard_My_Friend
                 #endregion
 
                 Game.OnUpdate += Game_OnGameUpdate;
+                Orbwalking.BeforeAttack += Orbwalking_BeforeAttack;
                 //We're subscribing to both events since we only need to update chime locations if an object is created or deleted.
                 //TODO: Implement the oncreate and ondelete to get a cache of chimes for less lag and accesses.
                 //GameObject.OnCreate += GameObject_OnCreateObject;
@@ -138,14 +137,6 @@ namespace Bard_My_Friend
                 R.SetSkillshot(.5f, 350, 1500, false, SkillshotType.SkillshotCircle);
         }
 
-        private static void BlockAA(Orbwalking.BeforeAttackEventArgs arg)
-        {
-            if (RootMenu.Item("Block last hit").IsActive() && arg.Target is Obj_AI_Minion &&
-                Orbwalker.ActiveMode != Orbwalking.OrbwalkingMode.LaneClear)
-                arg.Process = false;
-            else
-                arg.Process = true;
-        }
         private static HitChance GetHitChance(string submenu, string chanceItem)
         {
             var hc = RootMenu.SubMenu(submenu).Item(chanceItem).GetValue<StringList>();
@@ -161,6 +152,15 @@ namespace Bard_My_Friend
                     return HitChance.VeryHigh;
             }
             return HitChance.High;
+        }
+
+        private static void Orbwalking_BeforeAttack(Orbwalking.BeforeAttackEventArgs args)
+        {
+            //Block AA's when it's a minion that will die when you AA the last hit is active and no allies are nearby
+            if (args.Target.Type == GameObjectType.obj_AI_Minion && args.Target.Health < Player.GetAutoAttackDamage((Obj_AI_Base)args.Target) && RootMenu.Item("Block last hit").IsActive() && Player.CountAlliesInRange(1000) > 1)
+            {
+                args.Process = false;
+            }
         }
         private static void Game_OnGameUpdate(EventArgs args)
         {
