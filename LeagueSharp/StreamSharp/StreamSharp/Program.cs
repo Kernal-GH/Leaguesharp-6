@@ -15,6 +15,7 @@ namespace StreamSharp
         private static float deltaT = .2f;
         private static Vector3 lastEndpoint = new Vector3();
         private static float lastTime = 0f;
+        private static bool attacking = false;
         static void Main(string[] args)
         {
             CustomEvents.Game.OnGameLoad += OnLoad;
@@ -25,11 +26,17 @@ namespace StreamSharp
             Obj_AI_Hero.OnNewPath += DrawFake;
             Orbwalking.BeforeAttack += BeforeAttackFake;
             Spellbook.OnCastSpell += BeforeSpellCast;
+            Orbwalking.AfterAttack += AfterAttack;
         }
 
         private static void BeforeAttackFake(Orbwalking.BeforeAttackEventArgs args)
         {
             Hud.ShowClick(ClickType.Attack, args.Target.Position);
+            attacking = true;
+        }
+        private static void AfterAttack(AttackableUnit atk, AttackableUnit atk2)
+        {
+            attacking = false;
         }
 
         private static void BeforeSpellCast(Spellbook s, SpellbookCastSpellEventArgs args)
@@ -43,7 +50,10 @@ namespace StreamSharp
             if (sender.IsMe && lastTime + deltaT < Game.Time && args.Path.LastOrDefault()!=lastEndpoint)
             {
                 lastEndpoint = args.Path.LastOrDefault();
-                Hud.ShowClick(ClickType.Move, Game.CursorPos);
+                if (!attacking)
+                    Hud.ShowClick(ClickType.Move, Game.CursorPos);
+                else
+                    Hud.ShowClick(ClickType.Attack, Game.CursorPos);
                 lastTime = Game.Time;
             }
         }
