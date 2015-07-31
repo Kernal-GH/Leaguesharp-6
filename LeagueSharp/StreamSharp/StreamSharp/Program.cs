@@ -24,7 +24,7 @@ namespace StreamSharp
         static void OnLoad(EventArgs args)
         {
             root.AddItem(new MenuItem("Drawings", "Drawings").SetValue(new KeyBind('H', KeyBindType.Toggle, true)));
-            root.AddItem(new MenuItem("Zoom", "Zoom").SetValue(new KeyBind('J', KeyBindType.Toggle, false)));
+            root.AddItem(new MenuItem("Zoom (USE AT YOUR RISK; NOT GUARANTEED SAFE)", "Zoom (USE AT YOUR RISK; NOT GUARANTEED SAFE)").SetValue(new KeyBind('J', KeyBindType.Toggle, false)));
             root.AddItem(new MenuItem("Game Say", "Game Say").SetValue(new KeyBind('K', KeyBindType.Toggle, false)));
             root.AddItem(new MenuItem("Stream", "Stream").SetValue(new KeyBind('L', KeyBindType.Toggle, false)));
             root.AddItem(new MenuItem("Config", "Config").SetValue(new KeyBind(';', KeyBindType.Toggle, false)));
@@ -36,14 +36,14 @@ namespace StreamSharp
             if (!root.Item("Stream").IsActive() && !root.Item("Config").IsActive())
             {
                 Hacks.DisableDrawings = !(root.Item("Drawings").IsActive());
-                Hacks.ZoomHack = (root.Item("Zoom").IsActive());
+                Hacks.ZoomHack = (root.Item("Zoom (USE AT YOUR RISK; NOT GUARANTEED SAFE)").IsActive());
                 Hacks.DisableSay = (root.Item("Game Say").IsActive());
             }
             else if (root.Item("Config").IsActive())
             {
                 Hacks.DisableDrawings = false;
                 Hacks.DisableSay = false;
-                Hacks.ZoomHack = (root.Item("Zoom").IsActive());
+                Hacks.ZoomHack = (root.Item("Zoom (USE AT YOUR RISK; NOT GUARANTEED SAFE)").IsActive());
             }
             else
             {
