@@ -12,6 +12,9 @@ namespace StreamSharp
     class Program
     {
         static Menu root = new Menu("Stream", "Stream", true);
+        private static float deltaT = .2f;
+        private static Vector3 lastEndpoint = new Vector3();
+        private static float lastTime = 0f;
         static void Main(string[] args)
         {
             CustomEvents.Game.OnGameLoad += OnLoad;
@@ -19,6 +22,30 @@ namespace StreamSharp
             Hacks.DisableDrawings = true;
             //Hacks.ZoomHack = false;
             Hacks.DisableSay = true;
+            Obj_AI_Hero.OnNewPath += DrawFake;
+            Orbwalking.BeforeAttack += BeforeAttackFake;
+            Spellbook.OnCastSpell += BeforeSpellCast;
+        }
+
+        private static void BeforeAttackFake(Orbwalking.BeforeAttackEventArgs args)
+        {
+            Hud.ShowClick(ClickType.Attack, args.Target.Position);
+        }
+
+        private static void BeforeSpellCast(Spellbook s, SpellbookCastSpellEventArgs args)
+        {
+            if(args.Target.Position.Distance(ObjectManager.Player.Position)>=5f)
+            Hud.ShowClick(ClickType.Attack, args.Target.Position);
+        }
+
+        private static void DrawFake(Obj_AI_Base sender, GameObjectNewPathEventArgs args)
+        {
+            if (sender.IsMe && lastTime + deltaT < Game.Time && args.Path.LastOrDefault()!=lastEndpoint)
+            {
+                lastEndpoint = args.Path.LastOrDefault();
+                Hud.ShowClick(ClickType.Move, Game.CursorPos);
+                lastTime = Game.Time;
+            }
         }
 
         static void OnLoad(EventArgs args)
