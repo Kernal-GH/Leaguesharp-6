@@ -23,6 +23,7 @@ namespace StreamSharp
             Game.OnUpdate += OnUpdate;
             Hacks.DisableDrawings = true;
             Hacks.DisableSay = true;
+            Hacks.PingHack = false;
         }
 
         private static void BeforeAttackFake(Orbwalking.BeforeAttackEventArgs args)
@@ -62,7 +63,7 @@ namespace StreamSharp
 
         private static void DrawFake(Obj_AI_Base sender, GameObjectNewPathEventArgs args)
         {
-            if (sender.IsMe && lastTime + deltaT < Game.Time && args.Path.LastOrDefault() != lastEndpoint && root.SubMenu("Fake Clicks").Item("Enable").IsActive()
+            if (sender.IsMe && lastTime + deltaT < Game.Time && args.Path.LastOrDefault() != lastEndpoint && args.Path.LastOrDefault().Distance(ObjectManager.Player.ServerPosition) >=5f && root.SubMenu("Fake Clicks").Item("Enable").IsActive()
                 && root.SubMenu("Fake Clicks").Item("Click Mode").GetValue<StringList>().SelectedIndex == 1)
             {
                 lastEndpoint = args.Path.LastOrDefault();
