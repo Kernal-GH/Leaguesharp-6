@@ -1,9 +1,23 @@
 ﻿// --------------------------------------------------------------------------------------------------------------------
 // <copyright file="Program.cs" company="Nouser">
-//   Copyright Me
+// 
+// Copyright 2014 - 2015 LeagueSharp
+// StreamSharp uses LeagueSharp.Common.
+// 
+// LeagueSharp.Common is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// LeagueSharp.Common is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+
+// You should have received a copy of the GNU General Public License
+// along with LeagueSharp.Common. If not, see <http://www.gnu.org/licenses/>.
 // </copyright>
 // <summary>
-//   The program.
+//   A streaming assembly for Leaguesharp
 // </summary>
 // --------------------------------------------------------------------------------------------------------------------
 
@@ -138,7 +152,7 @@ namespace StreamSharp
         /// The fake click before you cast a spell
         /// </summary>
         /// <param name="s">
-        /// The spellbook.
+        /// The Spell Book.
         /// </param>
         /// <param name="args">
         /// The args.
